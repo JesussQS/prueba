@@ -1,0 +1,27 @@
+trigger:
+- jq_ambiente  # O el branch que desees
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UseJavaVersion@0
+  inputs:
+    version: '17'  # Define la versión de Java que deseas usar
+
+- script: 'mvn clean package'  # Ejecuta los comandos Maven para compilar y empaquetar tu proyecto
+  displayName: 'Maven Build'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: 'target/springboot-aws-lambda.jar'  # Ruta del archivo JAR de salida
+    artifactName: 'drop'  # Nombre del artefacto para publicar
+
+- task: AWSLambdaCreateOrUpdateFunction@1
+  inputs:
+    awsCredentials: 'ConexionAWS'  # Debes configurar tus credenciales de AWS en Azure DevOps
+    functionName: 'pruebaAmbientes'  # Cambia esto al nombre de tu función Lambda en AWS
+    functionRole: 'arn:aws:lambda:us-east-2:245673337733:function:pruebaAmbientes'  # Cambia esto al rol de ejecución de tu función Lambda
+    handler: 'com.recorrido.ambiente.Config.AmbienteLambda::listarAmbiente'  # Cambia esto al manejador de tu función Lambda
+    runtime: 'java11'
+    zipFile: '$(Pipeline.Workspace)/drop/target/springboot-aws-lambda.jar'  # Ruta al archivo JAR empaquetado
